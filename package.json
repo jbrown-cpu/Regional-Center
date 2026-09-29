@@ -1,0 +1,16 @@
+{
+  "name": "regional-center-billing",
+  "version": "1.0.0",
+  "description": "Billing, attendance, authorization and A/R management for California Regional Center (DDS) service providers.",
+  "private": true,
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "seed:demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "license": "UNLICENSED"
+}
