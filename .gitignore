@@ -1,0 +1,6 @@
+# Never commit client data (County lists, attendance trackers, exports)
+*.xlsx
+*.xls
+*.pdf
+*.csv
+node_modules/

@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FACES Adult IPV Billing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: a single working column. Sources → Summary → Findings → Matching → Billing ledger → Export.
+   Ledger-green accent; severity colors carry state; figures set in mono so columns line up. */
+:root {
+  --paper: #f2f4f0;
+  --surface: #ffffff;
+  --sunken: #e7ece6;
+  --ink: #17221e;
+  --ink-2: #4b5b54;
+  --ink-3: #6f7f78;
+  --rule: #d2dad3;
+  --accent: #1e6b52;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcede5;
+  --crit: #b42318;
+  --crit-soft: #fce6e3;
+  --warn: #8f5b00;
+  --warn-soft: #f9eed6;
+  --info: #3d5d7e;
+  --info-soft: #e2ebf4;
+  --focus: #1e6b52;
+  --shadow: 0 1px 2px rgba(23, 34, 30, .06), 0 4px 16px rgba(23, 34, 30, .05);
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "Libre Franklin", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1513; --surface: #161e1b; --sunken: #1d2723; --ink: #e3eae6; --ink-2: #a3b5ac; --ink-3: #7d8f87;
+    --rule: #2c3934; --accent: #62c29b; --accent-ink: #0b1411; --accent-soft: #1c3a2e;
+    --crit: #f97a70; --crit-soft: #3a1a17; --warn: #f0b54a; --warn-soft: #372a10; --info: #93b8df; --info-soft: #1b2a3a;
+    --focus: #62c29b; --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1513; --surface: #161e1b; --sunken: #1d2723; --ink: #e3eae6; --ink-2: #a3b5ac; --ink-3: #7d8f87;
+  --rule: #2c3934; --accent: #62c29b; --accent-ink: #0b1411; --accent-soft: #1c3a2e;
+  --crit: #f97a70; --crit-soft: #3a1a17; --warn: #f0b54a; --warn-soft: #372a10; --info: #93b8df; --info-soft: #1b2a3a;
+  --focus: #62c29b; --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 400 14px/1.5 var(--font-body);
+  padding-inline: 16px; padding-block: 0 64px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h2 { font: 600 1.05rem/1.3 var(--font-body); letter-spacing: .01em; }
+h3 { font: 600 .9rem/1.3 var(--font-body); }
+p { margin: 0; }
+a { color: var(--accent); }
+.num, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-2); }
+.small { font-size: .82rem; }
+.eyebrow { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Masthead */
+.masthead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; padding-block: 28px 18px; border-bottom: 1px solid var(--rule); }
+.masthead h1 { font: 600 clamp(1.7rem, 3.4vw, 2.3rem)/1.1 var(--font-display); letter-spacing: -.01em; }
+.contract { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; color: var(--ink-2); font-size: .85rem; }
+.contract b { color: var(--ink); font-weight: 600; }
+.period { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label, .field .label { font-size: .75rem; font-weight: 600; color: var(--ink-2); }
+input[type="month"], input[type="text"], input[type="url"], input[type="number"], input[type="search"], select {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 7px 9px; min-width: 0; max-width: 100%;
+}
+input[type="month"] { font-family: var(--font-data); font-size: 1rem; }
+
+/* Buttons */
+.btn { font: 600 .85rem/1 var(--font-body); border-radius: 6px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink);
+  padding: 9px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.07); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--ink-2); padding-inline: 8px; }
+.btn.ghost:hover { color: var(--ink); background: var(--sunken); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.sm { padding: 6px 10px; font-size: .78rem; }
+
+/* Banner */
+.banner { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; background: var(--info-soft); color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--info) 35%, transparent); border-radius: 8px; padding: 10px 14px; }
+.banner.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+
+/* Sources */
+.sources { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 20px; }
+@media (max-width: 900px) { .sources { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.drop { border: 1.5px dashed var(--rule); border-radius: 8px; padding: 18px; text-align: center; background: var(--paper); cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop strong { font-weight: 600; }
+.drop input { display: none; }
+.loaded { display: flex; flex-direction: column; gap: 8px; }
+.file-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; }
+.file-row .name { font-weight: 600; overflow-wrap: anywhere; }
+.file-row .meta { color: var(--ink-2); font-size: .8rem; }
+.file-row .warnings { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+.group-tag { font: 600 .78rem/1 var(--font-data); padding: 6px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); border: 1px solid transparent; }
+select.group-tag { padding: 5px 4px; cursor: pointer; }
+.coverage { display: flex; flex-wrap: wrap; gap: 6px; }
+.cov { font: 500 .76rem/1 var(--font-data); padding: 6px 8px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-3); }
+.cov.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.cov.missing { border-style: dashed; color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+
+/* Class links */
+details.classes > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.classes > summary::-webkit-details-marker { display: none; }
+details.classes > summary::before { content: "▸"; color: var(--ink-3); transition: transform .15s; }
+details.classes[open] > summary::before { transform: rotate(90deg); }
+.class-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.class-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) minmax(0, 1.4fr) 120px auto auto; gap: 8px; align-items: end; }
+@media (max-width: 760px) { .class-row { grid-template-columns: 76px minmax(0, 1fr); } .class-row .wide { grid-column: 1 / -1; } }
+.note { font-size: .8rem; color: var(--ink-2); background: var(--sunken); border-radius: 6px; padding: 8px 10px; }
+
+/* Summary tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.tile { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.tile .v { font: 500 1.6rem/1.15 var(--font-data); font-variant-numeric: tabular-nums; }
+.tile .s { font-size: .78rem; color: var(--ink-2); }
+.tile.alert .v { color: var(--crit); }
+
+/* Findings */
+.findings { display: flex; flex-direction: column; gap: 6px; }
+.finding { display: grid; grid-template-columns: 78px 56px minmax(0, 14rem) minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 8px 10px; border-radius: 6px; background: var(--surface); border: 1px solid var(--rule); }
+.finding button.link { all: unset; cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
+.finding button.link:hover { text-decoration: underline; }
+.finding button.link:focus-visible { outline: 2px solid var(--focus); }
+@media (max-width: 700px) { .finding { grid-template-columns: auto auto minmax(0, 1fr); } .finding .msg { grid-column: 1 / -1; } }
+.sev { font: 600 .68rem/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; padding: 5px 7px; border-radius: 4px; text-align: center; }
+.sev.critical { background: var(--crit-soft); color: var(--crit); }
+.sev.warning { background: var(--warn-soft); color: var(--warn); }
+.sev.info { background: var(--info-soft); color: var(--info); }
+.more { align-self: flex-start; }
+
+/* Matching */
+.match-table, .ledger { width: 100%; border-collapse: collapse; }
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.match-table th, .match-table td, .ledger th, .ledger td { padding: 9px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+.match-table th, .ledger th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; background: var(--sunken); position: sticky; top: 0; z-index: 1; white-space: nowrap; }
+.match-table tr:last-child td, .ledger tr:last-child td { border-bottom: 0; }
+.conf { font: 600 .7rem/1 var(--font-body); padding: 4px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.conf.auto { background: var(--accent-soft); color: var(--accent); }
+.conf.review { background: var(--warn-soft); color: var(--warn); }
+.conf.none { background: var(--crit-soft); color: var(--crit); }
+.conf.manual { background: var(--info-soft); color: var(--info); }
+
+/* Ledger */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg button { font: 500 .8rem/1 var(--font-body); border: 0; background: transparent; color: var(--ink-2); padding: 8px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button .c { font-family: var(--font-data); opacity: .75; margin-left: 4px; }
+.ledger td.n, .ledger th.n { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ledger tbody tr:hover { background: color-mix(in srgb, var(--sunken) 55%, transparent); }
+.ledger tr.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+.client { font-weight: 600; }
+.sub { font-size: .76rem; color: var(--ink-3); font-family: var(--font-data); }
+.status { font-size: .7rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: var(--sunken); color: var(--ink-2); white-space: nowrap; }
+.status.active { background: var(--accent-soft); color: var(--accent); }
+.status.noncompletion { background: var(--crit-soft); color: var(--crit); }
+.strip { display: flex; flex-wrap: wrap; gap: 3px; max-width: 260px; }
+.d { font: 500 .68rem/1 var(--font-data); width: 24px; height: 22px; display: inline-grid; place-items: center; border-radius: 4px; border: 1px solid var(--rule); color: var(--ink-3); position: relative; }
+.d.A { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.d.MA { background: var(--accent); color: var(--accent-ink); border-color: var(--info); box-shadow: inset 0 0 0 2px var(--info); }
+.d.M { background: var(--info-soft); color: var(--info); border-color: var(--info); }
+.d.N { background: var(--crit-soft); color: var(--crit); border-color: color-mix(in srgb, var(--crit) 40%, transparent); text-decoration: line-through; }
+.d.x { opacity: .45; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: .78rem; color: var(--ink-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.was { display: block; font-size: .72rem; color: var(--warn); }
+.cell-input { width: 4.2rem; text-align: right; font-family: var(--font-data); padding: 4px 6px; }
+.flags { display: flex; flex-direction: column; gap: 4px; min-width: 14rem; }
+.flag { font-size: .76rem; line-height: 1.35; padding-left: 8px; border-left: 3px solid var(--rule); color: var(--ink-2); }
+.flag.critical { border-color: var(--crit); color: var(--ink); }
+.flag.warning { border-color: var(--warn); }
+.flag.info { border-color: var(--info); }
+tr.sev-critical td:first-child { box-shadow: inset 3px 0 0 var(--crit); }
+tr.sev-warning td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+tfoot td { font-weight: 600; background: var(--sunken); }
+
+/* Export */
+.export { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.export .panel p { color: var(--ink-2); font-size: .85rem; }
+.radio { display: flex; gap: 8px; align-items: flex-start; font-size: .85rem; }
+.radio input { margin-top: 3px; }
+textarea { width: 100%; min-height: 12rem; font: .8rem/1.5 var(--font-data); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; resize: vertical; }
+details.settings > summary { cursor: pointer; color: var(--ink-2); font-size: .85rem; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 8px; font-weight: 500; box-shadow: var(--shadow); max-width: calc(100% - 32px); z-index: 10; }
+.empty { padding: 28px; text-align: center; color: var(--ink-2); }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; }
+footer { color: var(--ink-3); font-size: .78rem; border-top: 1px solid var(--rule); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Faith in Action Community Education Services</div>
+      <h1>Adult IPV Billing</h1>
+      <div class="contract" id="contract">
+        <span>Contract <b class="mono">4300022130</b></span>
+        <span>Santa Clara County Probation</span>
+        <span>FY 2026–27 Client List</span>
+      </div>
+    </div>
+    <div class="period">
+      <div class="field">
+        <label for="month">Billing month</label>
+        <input type="month" id="month">
+      </div>
+      <button class="btn ghost" id="theme" type="button" title="Switch light or dark">Theme</button>
+    </div>
+  </header>
+
+  <div id="sample-banner" class="banner" hidden>
+    <span><b>Sample data.</b> Every client shown is fictional. Load your County Client List and trackers to replace it.</span>
+    <button class="btn sm" id="clear-sample" type="button">Clear sample</button>
+  </div>
+
+  <section aria-labelledby="h-sources">
+    <div class="section-head">
+      <h2 id="h-sources">1. Sources</h2>
+      <span class="muted small">Files are read in this browser only. Nothing is uploaded.</span>
+    </div>
+    <div class="sources">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>County Client List</h3>
+          <span class="muted small">.xlsx (FY27 template)</span>
+        </div>
+        <label class="drop" id="drop-roster">
+          <input type="file" id="file-roster" accept=".xlsx">
+          <strong>Drop the Client List workbook</strong>
+          <span class="muted small">or click to choose. The month tab (for example Aug2026) is picked automatically.</span>
+        </label>
+        <div id="roster-info" class="loaded"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Attendance trackers</h3>
+          <span class="muted small">PDF, Excel or CSV export of each class sheet</span>
+        </div>
+        <label class="drop" id="drop-trackers">
+          <input type="file" id="file-trackers" accept=".pdf,.xlsx,.csv" multiple>
+          <strong>Drop one or more class trackers</strong>
+          <span class="muted small">The group (G1A, G2B…) is read from the file name. You can change it below.</span>
+        </label>
+        <div id="tracker-list" class="loaded"></div>
+        <div class="coverage" id="coverage" aria-label="Group coverage"></div>
+
+        <details class="classes" id="classes-panel">
+          <summary>Google Sheets class links</summary>
+          <div class="class-list" id="class-list"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn sm" id="add-class" type="button">Add class</button>
+            <button class="btn sm primary" id="fetch-all" type="button">Fetch all linked classes</button>
+          </div>
+          <p class="note" style="margin-top:10px">Direct fetch only works when a sheet is shared as “Anyone with the link can view.” Trackers hold client names, so the safer route is <b>File → Download → Microsoft Excel (.xlsx)</b> in Google Sheets and dropping that file above. Links are remembered on this computer only.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-summary">
+    <div class="section-head">
+      <h2 id="h-summary">2. Month at a glance</h2>
+      <span class="muted small" id="summary-scope"></span>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section aria-labelledby="h-findings" id="findings-section">
+    <div class="section-head">
+      <h2 id="h-findings">3. Findings to clear before submitting</h2>
+      <span class="muted small" id="findings-count"></span>
+    </div>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section aria-labelledby="h-match" id="match-section">
+    <div class="section-head">
+      <h2 id="h-match">4. Name matching</h2>
+      <label class="small muted"><input type="checkbox" id="show-all-matches"> Show all matches</label>
+    </div>
+    <p class="muted small">Tracker names are matched to the County list by spelling similarity. Confirm anything marked Review or Unmatched. Your choices are remembered for next month.</p>
+    <div class="scroll"><table class="match-table" id="match-table"></table></div>
+  </section>
+
+  <section aria-labelledby="h-ledger">
+    <div class="section-head">
+      <h2 id="h-ledger">5. Billing ledger</h2>
+      <div class="legend">
+        <span><i class="d A">4</i> Attended</span>
+        <span><i class="d MA">5</i> Make-up + attended</span>
+        <span><i class="d M">6</i> Make-up only</span>
+        <span><i class="d N">7</i> Absent</span>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="seg" id="filters" role="group" aria-label="Filter rows"></div>
+      <input type="search" id="search" placeholder="Search client or file #" aria-label="Search clients">
+    </div>
+    <div class="scroll"><table class="ledger" id="ledger"></table></div>
+    <p class="muted small">Columns map to the County sheet: Intake → U, Sessions → V, Hours → W, Make-ups → AA, Make-up hours → AB, Make-up type → AC. Hours = sessions × <span id="hrs-label">1.5</span>.</p>
+  </section>
+
+  <section aria-labelledby="h-export">
+    <h2 id="h-export">6. Export</h2>
+    <div class="export">
+      <div class="panel">
+        <h3>Completed County Client List</h3>
+        <p>Writes the ledger into the month tab of your original workbook. Only the billing cells change. Dropdowns, formatting and every other tab stay exactly as they were.</p>
+        <label class="radio"><input type="radio" name="mode" value="fill" id="mode-fill" checked> <span><b>Fill blank cells only.</b> Keeps anything staff already entered.</span></label>
+        <label class="radio"><input type="radio" name="mode" value="replace" id="mode-replace"> <span><b>Replace with tracker totals.</b> Overwrites what is there for clients in the loaded groups.</span></label>
+        <p class="small">Clients who also attend a group whose tracker is not loaded are skipped, so a partial count is never written.</p>
+        <button class="btn primary" id="export-county" type="button">Download Client List (.xlsx)</button>
+      </div>
+      <div class="panel">
+        <h3>Billing audit workbook</h3>
+        <p>Summary, per-client billing, every attendance date, findings and unmatched names. Keep it with the month’s submission as backup.</p>
+        <button class="btn" id="export-audit" type="button">Download audit (.xlsx)</button>
+        <details class="settings">
+          <summary>Rates and hours</summary>
+          <div class="settings-grid">
+            <div class="field"><label for="set-session">Hours per session</label><input type="number" id="set-session" step="0.25" min="0"></div>
+            <div class="field"><label for="set-intake">Intake hours</label><input type="number" id="set-intake" step="0.25" min="0"></div>
+            <div class="field"><label for="set-rate-group">$ per group hour</label><input type="number" id="set-rate-group" step="0.01" min="0"></div>
+            <div class="field"><label for="set-rate-makeup">$ per make-up hour</label><input type="number" id="set-rate-makeup" step="0.01" min="0"></div>
+            <div class="field"><label for="set-rate-intake">$ per intake</label><input type="number" id="set-rate-intake" step="0.01" min="0"></div>
+            <div class="field"><label for="set-mu-type">Default make-up type</label><select id="set-mu-type"><option>Individual</option><option>Group</option></select></div>
+          </div>
+        </details>
+      </div>
+      <div class="panel">
+        <h3>Monthly narrative figures</h3>
+        <p>Service counts for the narrative and PAR that go to Probation with the Client List.</p>
+        <textarea id="narrative" readonly aria-label="Monthly narrative figures"></textarea>
+        <button class="btn" id="copy-narrative" type="button">Copy figures</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Submit the Client List with the monthly narrative and PAR to the addresses on the workbook’s Instructions tab.
+    <span id="submit-to"></span>
+    Saved on this computer: class links, rates and confirmed name matches. <button class="btn ghost sm" id="forget" type="button">Forget saved data</button>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="vendor/exceljs.min.js"></script>
+<script src="vendor/fflate.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/pdf.worker.min.js"></script>
+<script src="billing-core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
